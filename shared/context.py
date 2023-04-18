@@ -1,7 +1,7 @@
 from dependency_injector import containers, providers
 
 from .utils import Environment
-from .components import Cosmos, AzureTable
+from .components import Cosmos, JobsTable
 
 
 class Gateways(containers.DeclarativeContainer):
@@ -13,7 +13,7 @@ class Gateways(containers.DeclarativeContainer):
     )
 
     tables_client = providers.Singleton(
-        AzureTable,
+        JobsTable,
         uri=config.azure.storage_account_name,
         key=config.azure.storage_account_key
     )

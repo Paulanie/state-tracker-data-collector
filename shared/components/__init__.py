@@ -1,2 +1,2 @@
 from .cosmos import Cosmos
-from .tables import AzureTable
+from .tables import JobsTable

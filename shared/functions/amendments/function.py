@@ -1,10 +1,11 @@
+import datetime
 import logging
 from typing import MutableMapping, Dict
 
 from dependency_injector.wiring import inject, Provide
 from ...utils import download_file, Environment, get_all_files_in_dir, delete_keys_from_dict, read_json, \
     delete_empty_nested_from_dict, wrap_around_progress_bar, get_field, flatten_dict
-from ...components import Cosmos, AzureTable
+from ...components import Cosmos, JobsTable
 from dateutil import parser
 
 USELESS_DATA = [
@@ -34,15 +35,12 @@ def transform_entry(entry: MutableMapping) -> Dict:
     return entry
 
 
-def get_last_run(tables: AzureTable) -> Dict:
-    tables.select_jobs_table()
-    return tables.get("amendments", filters={"RunDate"})
-
-
 @inject
 def amendments(cosmos: Cosmos = Provide["gateways.cosmos_client"],
-               tables: AzureTable = Provide["gateways.tables_client"]) -> None:
+               tables: JobsTable = Provide["gateways.tables_client"]) -> None:
     cosmos.select_container(Environment.cosmos_database, "amendments", "/uid")
+
+    last_run = tables.get_last_run().get("run_datetime", datetime.datetime.now())
 
     logging.info("Gathering amendments ...")
     # data_dir = download_file(Environment.amendments_url, auto_extract=True)

@@ -1,0 +1,4 @@
+.venv
+azurite
+.mypy_cache
+.vscode

@@ -1,0 +1,13 @@
+# Do not include azure-functions-worker as it may conflict with the Azure Functions platform
+
+azure-functions
+azure-cosmos
+azure-data-tables
+requests
+orjson
+mypy
+pandas
+dependency-injector
+python-dateutil
+tqdm-loggable
+python-dotenv

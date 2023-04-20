@@ -12,10 +12,11 @@ class Gateways(containers.DeclarativeContainer):
         connection_string=config.azure.cosmos_connection_string
     )
 
-    tables_client = providers.Singleton(
+    amendments_jobs_table = providers.Singleton(
         JobsTable,
-        uri=config.azure.storage_account_name,
-        key=config.azure.storage_account_key
+        storage_account_name=config.azure.storage_account_name,
+        key=config.azure.storage_account_key,
+        partition_key="amendments"
     )
 
 

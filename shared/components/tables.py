@@ -1,9 +1,11 @@
 import uuid
-from datetime import datetime
 from typing import Optional, Dict
 
 from azure.core.credentials import AzureNamedKeyCredential
+from azure.core.exceptions import ResourceNotFoundError
 from azure.data.tables import TableServiceClient, TableClient, UpdateMode
+
+from shared.utils import now_with_tz
 
 
 class JobsTable:
@@ -21,7 +23,10 @@ class JobsTable:
         self._partition_key = partition_key
 
     def get(self, partition_key: str, row_key: str) -> Optional[Dict]:
-        return self._table_client.get_entity(partition_key=partition_key, row_key=row_key) or {}
+        try:
+            return self._table_client.get_entity(partition_key=partition_key, row_key=row_key)
+        except ResourceNotFoundError:
+            return {}
 
     def get_last_run(self) -> Optional[Dict]:
         return self.get(self._partition_key, "last")
@@ -34,7 +39,7 @@ class JobsTable:
             last_run = {
                 "PartitionKey": self._partition_key,
                 "RowKey": "last",
-                "run_datetime": datetime.now()
+                "run_datetime": now_with_tz()
             }
 
         if len(updates) > 0:

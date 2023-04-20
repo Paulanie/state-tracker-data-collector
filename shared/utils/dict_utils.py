@@ -1,8 +1,9 @@
 from typing import Dict, List, Any, MutableMapping
 
 
-def get_field(d: Dict, f: str, default: Any) -> Any:
-    return d.get("f", default) or default
+def get_or(d: Dict, f: str, default: Any) -> Any:
+    return d.get(f, default) or default
+
 
 def delete_keys_from_dict(dictionary: Dict, keys: List[str]):
     cpy = dictionary.copy()

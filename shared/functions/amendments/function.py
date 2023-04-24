@@ -4,8 +4,8 @@ from typing import MutableMapping, Dict
 
 from dependency_injector.wiring import inject, Provide
 from ...utils import download_file, Environment, get_all_files_in_dir, delete_keys_from_dict, read_json, \
-    delete_empty_nested_from_dict, wrap_around_progress_bar, get_or, flatten_dict, now_with_tz, TIMEZONE
-from ...components import Cosmos, JobsTable
+    delete_empty_nested_from_dict, wrap_around_progress_bar, get_or, now_with_tz, TIMEZONE
+from ...components import Cosmos, JobsTable, Amendment
 from dateutil import parser
 
 USELESS_DATA = [
@@ -21,9 +21,16 @@ def replace_date_entry_by_isotzdatetime(d: Dict, key: str):
         d[key] = datetime.datetime.strptime(data, "%Y-%m-%d").astimezone(tz=TIMEZONE).isoformat()
 
 
-def transform_entry(entry: MutableMapping) -> Dict:
+def transform_entry(entry: MutableMapping) -> Amendment:
     entry = entry.get("amendement")
     entry = delete_keys_from_dict(entry, USELESS_DATA)
+
+    return Amendment({
+        "uid": entry["uid"],
+        "examenRef": entry["examenRef"],
+        "triAmendement": entry["triAmendement"],
+        ""
+    })
 
     entry["id"] = entry["uid"]
     entry["sort"] = get_or(entry["cycleDeVie"], "sort", "Non examiné")

@@ -1,2 +1,3 @@
 from .cosmos import Cosmos
-from .tables import JobsTable
+from .jobs import JobsTable
+from .database import Database, Amendment

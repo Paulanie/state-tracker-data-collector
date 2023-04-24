@@ -11,3 +11,5 @@ dependency-injector
 python-dateutil
 tqdm-loggable
 python-dotenv
+sqlalchemy
+pymssql

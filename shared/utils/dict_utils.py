@@ -37,3 +37,14 @@ def _flatten_dict_gen(d, parent_key, sep):
 
 def flatten_dict(d: MutableMapping, parent_key: str = '', sep: str = '.') -> dict:
     return dict(_flatten_dict_gen(d, parent_key, sep))
+
+
+def get(d: Dict, *keys: str) -> Any:
+    current = d
+    for k in keys:
+        if k in current and current[k] is not None:
+            current = current[k]
+        else:
+            return None
+    return current
+

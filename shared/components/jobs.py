@@ -5,7 +5,8 @@ from azure.core.credentials import AzureNamedKeyCredential
 from azure.core.exceptions import ResourceNotFoundError
 from azure.data.tables import TableServiceClient, TableClient, UpdateMode
 
-from shared.utils import now_with_tz
+from shared.utils import now_with_tz, TIMEZONE
+import datetime
 
 
 class JobsTable:
@@ -29,7 +30,12 @@ class JobsTable:
             return {}
 
     def get_last_run(self) -> Optional[Dict]:
-        return self.get(self._partition_key, "last")
+        result = self.get(self._partition_key, "last")
+        return {
+            "PartitionKey": self._partition_key,
+            "RowKey": "last",
+            "run_datetime": datetime.datetime.fromtimestamp(0).astimezone(tz=TIMEZONE)
+        } if len(result) <= 0 else result
 
     def update_last_run(self, **updates):
         last_run = self.get_last_run()

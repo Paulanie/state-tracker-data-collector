@@ -1,7 +1,7 @@
 from dependency_injector import containers, providers
 
-from .utils import Environment
-from .components import Cosmos, JobsTable
+from .env import Environment
+from .components import Cosmos, JobsTable, Database
 
 
 class Gateways(containers.DeclarativeContainer):
@@ -31,3 +31,6 @@ application.config.gateways.azure.cosmos_connection_string.from_env("COSMOS_ACCO
 application.config.gateways.azure.storage_account_name.from_env("STORAGE_ACCOUNT_NAME", required=True)
 application.config.gateways.azure.storage_account_key.from_env("STORAGE_ACCOUNT_KEY", required=True)
 application.wire(modules=["shared.functions.amendments.function"])
+
+Database.init_with_credentials(Environment.sql_user, Environment.sql_password, Environment.sql_host,
+                               Environment.sql_port, Environment.sql_database)

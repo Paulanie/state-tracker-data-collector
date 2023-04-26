@@ -16,6 +16,10 @@ def download_file(url: str, output_directory: str = None, auto_extract: bool = F
         filename = os.path.basename(url)
 
     file_path = os.path.join(output_directory, filename)
+    if os.path.exists(file_path) and file_path.endswith(".zip"):
+        if os.path.exists(file_path.replace(".zip", "")):
+            return file_path.replace(".zip", "")
+
     with open(file_path, "wb") as f:
         for chunk in req.iter_content(chunk_size=1024):
             if chunk:

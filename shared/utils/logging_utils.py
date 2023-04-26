@@ -1,7 +1,10 @@
 import datetime
+import logging
 from typing import Callable, List
 
 from tqdm_loggable.auto import tqdm
+
+logging.getLogger("azure.core.pipeline.policies.http_logging_policy").setLevel(logging.WARN)
 
 
 def wrap_around_progress_bar(operation: Callable, data: List, description: str = "Progress") -> List:

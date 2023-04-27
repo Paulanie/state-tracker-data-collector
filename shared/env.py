@@ -10,6 +10,7 @@ class Environment:
     cosmos_database = os.getenv("COSMOS_DATABASE")
     storage_account_table_url = os.getenv("STORAGE_ACCOUNT_TABLE_URL")
     storage_account_key = os.getenv("STORAGE_ACCOUNT_KEY")
+    jobs_table_name = os.getenv("JOBS_TABLE_NAME")
     sql_host = os.getenv("SQL_HOST")
     sql_port = os.getenv("SQL_PORT")
     sql_database = os.getenv("SQL_DATABASE")

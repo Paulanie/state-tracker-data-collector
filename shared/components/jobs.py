@@ -10,16 +10,14 @@ import datetime
 
 
 class JobsTable:
-    __jobs_table_name: str = "statetrackerfunctionsjobruns"
-
     _service: TableServiceClient
     _table_client: TableClient
 
-    def __init__(self, storage_account_name: str, key: str):
+    def __init__(self, storage_account_name: str, key: str, table_name: str):
         uri = f"https://{storage_account_name}.table.core.windows.net"
         credential = AzureNamedKeyCredential(storage_account_name, key)
         self._service = TableServiceClient(endpoint=uri, credential=credential)
-        self._table_client = self._service.get_table_client(table_name=self.__jobs_table_name)
+        self._table_client = self._service.get_table_client(table_name=table_name)
 
     def get(self, partition_key: str, row_key: str) -> Optional[Dict]:
         try:

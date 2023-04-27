@@ -1,18 +1,26 @@
-from typing import Dict, List, Any, MutableMapping
+from typing import Dict, List, Any, MutableMapping, Union
 
 
 def get_or(d: Dict, f: str, default: Any) -> Any:
     return d.get(f, default) or default
 
 
-def delete_keys_from_dict(dictionary: Dict, keys: List[str]):
-    cpy = dictionary.copy()
-    for field in cpy.keys():
-        if field in keys:
-            del dictionary[field]
-        if type(cpy[field]) == dict:
-            delete_keys_from_dict(dictionary[field], keys)
-    return dictionary
+def delete_keys_from_dict(dictionary: Union[Dict | List[Dict]], keys: List[str]):
+    def __delete_keys(d: Dict):
+        cpy = d.copy()
+        for field in cpy.keys():
+            if field in keys:
+                del d[field]
+            if type(cpy[field]) == dict:
+                __delete_keys(d[field])
+                if len(d[field]) <= 0:
+                    del d[field]
+        return d
+
+    if isinstance(dictionary, List):
+        return [__delete_keys(d) for d in dictionary]
+    else:
+        return __delete_keys(dictionary)
 
 
 def delete_empty_nested_from_dict(dictionary: Dict):
@@ -47,4 +55,3 @@ def get(d: Dict, *keys: str) -> Any:
         else:
             return None
     return current
-

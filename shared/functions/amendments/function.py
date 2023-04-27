@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from ...env import Environment
 from ...utils import download_file, get_all_files_in_dir, delete_keys_from_dict, read_json, \
     wrap_around_progress_bar, now_with_tz
-from ...components import JobsTable, Amendment, Database, insert_or_update
+from ...components import JobsTable, Amendments, Database, insert_or_update
 from dateutil import parser
 import datetime
 
@@ -20,11 +20,11 @@ USELESS_DATA = [
 ]
 
 
-def map_to_entity(entry: MutableMapping) -> Amendment:
+def map_to_entity(entry: MutableMapping) -> Amendments:
     entry = entry.get("amendement")
     entry = delete_keys_from_dict(entry, USELESS_DATA)
 
-    return Amendment.from_data_export(entry)
+    return Amendments.from_data_export(entry)
 
 
 def get_date(entry: MutableMapping) -> datetime.datetime:
@@ -37,7 +37,7 @@ def get_date(entry: MutableMapping) -> datetime.datetime:
 @Database.with_session
 def drop_data(data: List[Dict], last_run: datetime.datetime, session: Session) -> List[Dict]:
     recent_data = [d for d in data if get_date(d) > last_run]
-    already_existing = {a.uid: "" for a in session.execute(select(Amendment.uid)).all()}
+    already_existing = {a.uid: "" for a in session.execute(select(Amendments.uid)).all()}
     return [d for d in recent_data if d["amendement"]["uid"] not in already_existing]
 
 @inject

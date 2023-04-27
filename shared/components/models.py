@@ -1,14 +1,14 @@
-from typing import Dict
+from typing import Dict, List
 
-from sqlalchemy import Column, String, DateTime, Boolean
-from sqlalchemy.orm import declarative_base
+from sqlalchemy import Column, String, DateTime, Boolean, Date, Integer, ForeignKey
+from sqlalchemy.orm import declarative_base, Mapped, relationship, mapped_column
 
 from shared.utils import convert_to_datetime, get
 
 Base = declarative_base()
 
 
-class Amendment(Base):
+class Amendments(Base):
     __tablename__ = "amendments"
 
     uid = Column(String, primary_key=True)
@@ -27,8 +27,8 @@ class Amendment(Base):
     article99 = Column(Boolean)
 
     @classmethod
-    def from_data_export(cls, data: Dict) -> "Amendment":
-        return Amendment(**{
+    def from_data_export(cls, data: Dict) -> "Amendments":
+        return Amendments(**{
             "uid": data["uid"],
             "examenRef": data["examenRef"],
             "triAmendement": data["triAmendement"] if len(data["triAmendement"]) > 0 else None,
@@ -42,3 +42,57 @@ class Amendment(Base):
             "article99": data["article99"].lower() == "true"
         })
 
+
+class Actors(Base):
+    __tablename__ = "actors"
+
+    uid = Column(String, primary_key=True)
+    title = Column(String)
+    surname = Column(String)
+    name = Column(String)
+    alpha = Column(String)
+    trigram = Column(String)
+    birthdate = Column(Date)
+    birthplace = Column(String)
+    deathDate = Column(Date)
+    uriHatvp = Column(String)
+
+    professionId: Mapped[int] = mapped_column(ForeignKey("professions.id"))
+    profession: Mapped["Professions"] = relationship(back_populates="actors")
+
+    @classmethod
+    def from_data_export(cls, data: Dict) -> "Actors":
+        return Actors(**{
+            "uid": data["uid"]["#text"],
+            "title": data["etatCivil"]["ident"]["civ"],
+            "surname": data["etatCivil"]["ident"]["nom"],
+            "name": data["etatCivil"]["ident"]["prenom"],
+            "alpha": data["etatCivil"]["ident"]["alpha"],
+            "trigram": data["etatCivil"]["ident"]["trigramme"],
+            "birthdate": convert_to_datetime(data["etatCivil"]["infoNaissance"], "%Y-%m-%d"),
+            "birthplace": f"{data['etatCivil']['infoNaissance']['villeNais']},"
+                          f"{data['etatCivil']['infoNaissance']['depNais']},"
+                          f"{data['etatCivil']['infoNaissance']['paysNais']}",
+            "deathDate": convert_to_datetime(data["etatCivil"].get("dateDeces"), "%Y-%m-%d"),
+            "uriHatvp": data["uriHatvp"]
+        })
+
+
+class Professions(Base):
+    __tablename__ = "professions"
+
+    id = Column(Integer, primary_key=True)
+    actorId = Column(String, ForeignKey("actors.uid"))
+    name = Column(String)
+    family = Column(String)
+    category = Column(String)
+
+    actors: Mapped[List["Actors"]] = relationship(back_populates="profession")
+
+    @classmethod
+    def from_data_export(cls, data: Dict) -> "Professions":
+        return Professions(**{
+            "name": data["libelleCourant"],
+            "category": data["socProcINSEE"]["catSocPro"],
+            "family": data["socProcINSEE"]["famSocPro"]
+        })

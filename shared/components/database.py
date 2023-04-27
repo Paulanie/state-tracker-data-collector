@@ -1,10 +1,10 @@
 import logging
-from typing import Any, Callable, Dict
+from typing import Callable, List
 
-from sqlalchemy import create_engine, URL, Column, String, DateTime, Boolean, Engine
-from sqlalchemy.orm import Session, sessionmaker, declarative_base
+from sqlalchemy import create_engine, URL, Engine, select, Column
+from sqlalchemy.orm import Session
 
-from shared.utils import convert_to_datetime, get
+from ..utils import wrap_around_progress_bar
 
 
 class Database:
@@ -32,40 +32,22 @@ class Database:
         return Session(cls._engine)
 
 
-Base = declarative_base()
+@Database.with_session
+def insert_or_update(entities: List, entity_id_column: Column, session: Session):
+    already_existing = {a.uid: "" for a in session.execute(select(entity_id_column)).all()}
+    to_merge = []
+    to_add = []
+    for entity in entities:
+        if entity.uid in already_existing:
+            to_merge.append(entity)
+        else:
+            to_add.append(entity)
 
+    logging.info(f"{len(to_add)} entities to add and {len(to_merge)} to merge.")
+    logging.info("Adding non existing entities ...")
+    session.add_all(to_add)
+    session.flush()
 
-class Amendment(Base):
-    __tablename__ = "amendments"
-
-    uid = Column(String, primary_key=True)
-    examenRef = Column(String)
-    triAmendement = Column(String)
-    texteLegislatifRef = Column(String)
-
-    dateDepot = Column(DateTime)
-    datePublication = Column(DateTime)
-    dateSort = Column(DateTime)
-
-    etat = Column(String)
-    sousEtat = Column(String)
-    representation = Column(String)
-
-    article99 = Column(Boolean)
-
-    @classmethod
-    def from_data_export(cls, data: Dict) -> "Amendment":
-        return Amendment(**{
-            "uid": data["uid"],
-            "examenRef": data["examenRef"],
-            "triAmendement": data["triAmendement"] if len(data["triAmendement"]) > 0 else None,
-            "texteLegislatifRef": data["texteLegislatifRef"],
-            "dateDepot": convert_to_datetime(data["cycleDeVie"]["dateDepot"], "%Y-%m-%d"),
-            "datePublication": convert_to_datetime(data["cycleDeVie"].get("datePublication"), "%Y-%m-%d"),
-            "dateSort": convert_to_datetime(data["cycleDeVie"].get("dateSort")),
-            "etat": data["cycleDeVie"]["etatDesTraitements"]["etat"]["libelle"],
-            "sousEtat": data["cycleDeVie"]["etatDesTraitements"]["sousEtat"].get("libelle"),
-            "representation": get(data, "representations", "representation", "contenu", "documentURI"),
-            "article99": data["article99"].lower() == "true"
-        })
-
+    logging.info("Merging already existing entities")
+    with session.no_autoflush:
+        wrap_around_progress_bar(lambda x: session.merge(x), to_merge, "Merging entities")

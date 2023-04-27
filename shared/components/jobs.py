@@ -14,14 +14,12 @@ class JobsTable:
 
     _service: TableServiceClient
     _table_client: TableClient
-    _partition_key: str
 
-    def __init__(self, storage_account_name: str, key: str, partition_key: str):
+    def __init__(self, storage_account_name: str, key: str):
         uri = f"https://{storage_account_name}.table.core.windows.net"
         credential = AzureNamedKeyCredential(storage_account_name, key)
         self._service = TableServiceClient(endpoint=uri, credential=credential)
         self._table_client = self._service.get_table_client(table_name=self.__jobs_table_name)
-        self._partition_key = partition_key
 
     def get(self, partition_key: str, row_key: str) -> Optional[Dict]:
         try:
@@ -29,21 +27,21 @@ class JobsTable:
         except ResourceNotFoundError:
             return {}
 
-    def get_last_run(self) -> Optional[Dict]:
-        result = self.get(self._partition_key, "last")
+    def get_last_run(self, partition_key: str) -> Optional[Dict]:
+        result = self.get(partition_key, "last")
         return {
-            "PartitionKey": self._partition_key,
+            "PartitionKey": partition_key,
             "RowKey": "last",
             "run_datetime": datetime.datetime.fromtimestamp(0).astimezone(tz=TIMEZONE)
         } if len(result) <= 0 else result
 
-    def update_last_run(self, **updates):
-        last_run = self.get_last_run()
+    def update_last_run(self, partition_key: str, **updates):
+        last_run = self.get_last_run(partition_key)
         if last_run is not None:
             self.create(last_run, row_key=str(uuid.uuid4()))
         else:
             last_run = {
-                "PartitionKey": self._partition_key,
+                "PartitionKey": partition_key,
                 "RowKey": "last",
                 "run_datetime": now_with_tz()
             }

@@ -3,16 +3,16 @@ from typing import MutableMapping, List, Dict
 
 from dependency_injector.wiring import inject, Provide
 from sqlalchemy import select
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from ...env import Environment
 from ...utils import download_file, get_all_files_in_dir, delete_keys_from_dict, read_json, \
-    wrap_around_progress_bar, now_with_tz, TIMEZONE
-from ...components import JobsTable, Amendment, Database
+    wrap_around_progress_bar, now_with_tz
+from ...components import JobsTable, Amendment, Database, insert_or_update
 from dateutil import parser
 import datetime
 
+JOB_PARTITION_KEY = "amendments"
 USELESS_DATA = [
     "@xmlns",
     "@xmlns:xsi",
@@ -40,31 +40,9 @@ def drop_data(data: List[Dict], last_run: datetime.datetime, session: Session) -
     already_existing = {a.uid: "" for a in session.execute(select(Amendment.uid)).all()}
     return [d for d in recent_data if d["amendement"]["uid"] not in already_existing]
 
-
-@Database.with_session
-def insert_or_update(entities: List[Amendment], session: Session):
-    already_existing = {a.uid: "" for a in session.execute(select(Amendment.uid)).all()}
-    to_merge = []
-    to_add = []
-    for entity in entities:
-        if entity.uid in already_existing:
-            to_merge.append(entity)
-        else:
-            to_add.append(entity)
-
-    logging.info(f"{len(to_add)} entities to add and {len(to_merge)} to merge.")
-    logging.info("Adding non existing entities ...")
-    session.add_all(to_add)
-    session.flush()
-
-    logging.info("Merging already existing entities")
-    with session.no_autoflush:
-        wrap_around_progress_bar(lambda x: session.merge(x), to_merge, "Merging entities")
-
-
 @inject
-def amendments(jobs: JobsTable = Provide["gateways.amendments_jobs_table"]) -> None:
-    last_run = jobs.get_last_run().get("run_datetime")
+def amendments(jobs: JobsTable = Provide["gateways.jobs_table"]) -> None:
+    last_run = jobs.get_last_run(JOB_PARTITION_KEY).get("run_datetime")
     logging.info(f"Last run was on {last_run}")
 
     logging.info("Gathering amendments ...")
@@ -83,5 +61,5 @@ def amendments(jobs: JobsTable = Provide["gateways.amendments_jobs_table"]) -> N
     else:
         logging.info("No data to upsert !")
 
-    jobs.update_last_run(run_datetime=now_with_tz())
+    jobs.update_last_run(JOB_PARTITION_KEY, run_datetime=now_with_tz())
     logging.info("Done")

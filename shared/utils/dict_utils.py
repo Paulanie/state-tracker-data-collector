@@ -5,7 +5,7 @@ def get_or(d: Dict, f: str, default: Any) -> Any:
     return d.get(f, default) or default
 
 
-def delete_keys_from_dict(dictionary: Union[Dict | List[Dict]], keys: List[str]):
+def delete_keys_from_dict(dictionary: Union[Dict | List[Dict]], keys: List[str], delete_empty: bool = True):
     def __delete_keys(d: Dict):
         cpy = d.copy()
         for field in cpy.keys():
@@ -13,7 +13,7 @@ def delete_keys_from_dict(dictionary: Union[Dict | List[Dict]], keys: List[str])
                 del d[field]
             if type(cpy[field]) == dict:
                 __delete_keys(d[field])
-                if len(d[field]) <= 0:
+                if len(d[field]) <= 0 and delete_empty:
                     del d[field]
         return d
 

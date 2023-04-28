@@ -62,17 +62,17 @@ class Actors(Base):
 
     @classmethod
     def from_data_export(cls, data: Dict) -> "Actors":
+        birthplace = [get(data, "etatCivil", "infoNaissance", f) for f in ["villeNais", "depNais", "paysNais"]]
+        birthplace = ','.join([b for b in birthplace if b is not None])
         return Actors(**{
             "uid": data["uid"]["#text"],
             "title": data["etatCivil"]["ident"]["civ"],
             "surname": data["etatCivil"]["ident"]["nom"],
             "name": data["etatCivil"]["ident"]["prenom"],
             "alpha": data["etatCivil"]["ident"]["alpha"],
-            "trigram": data["etatCivil"]["ident"]["trigramme"],
-            "birthdate": convert_to_datetime(data["etatCivil"]["infoNaissance"], "%Y-%m-%d"),
-            "birthplace": f"{data['etatCivil']['infoNaissance']['villeNais']},"
-                          f"{data['etatCivil']['infoNaissance']['depNais']},"
-                          f"{data['etatCivil']['infoNaissance']['paysNais']}",
+            "trigram": get(data, "etatCivil", "ident", "trigramme"),
+            "birthdate": convert_to_datetime(get(data, "etatCivil", "infoNaissance", "dateNais"), "%Y-%m-%d"),
+            "birthplace": birthplace if len(birthplace) > 0 else None,
             "deathDate": convert_to_datetime(data["etatCivil"].get("dateDeces"), "%Y-%m-%d"),
             "uriHatvp": get(data, "uriHatvp")
         })
@@ -91,7 +91,7 @@ class Professions(Base):
     @classmethod
     def from_data_export(cls, data: Dict) -> "Professions":
         return Professions(**{
-            "name": data["libelleCourant"],
+            "name": get(data, "libelleCourant").lower() if get(data, "libelleCourant") is not None else None,
             "category": data["socProcINSEE"]["catSocPro"],
             "family": data["socProcINSEE"]["famSocPro"]
         })

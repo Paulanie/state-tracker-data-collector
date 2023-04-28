@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from sqlalchemy import Column, String, DateTime, Boolean, Date, Integer, ForeignKey
 from sqlalchemy.orm import declarative_base, Mapped, relationship, mapped_column
@@ -58,7 +58,7 @@ class Actors(Base):
     uriHatvp = Column(String)
 
     professionId: Mapped[int] = mapped_column(ForeignKey("professions.id"))
-    profession: Mapped["Professions"] = relationship(back_populates="actors")
+    profession: Mapped[Optional["Professions"]] = relationship(back_populates="actors")
 
     @classmethod
     def from_data_export(cls, data: Dict) -> "Actors":
@@ -74,7 +74,7 @@ class Actors(Base):
                           f"{data['etatCivil']['infoNaissance']['depNais']},"
                           f"{data['etatCivil']['infoNaissance']['paysNais']}",
             "deathDate": convert_to_datetime(data["etatCivil"].get("dateDeces"), "%Y-%m-%d"),
-            "uriHatvp": data["uriHatvp"]
+            "uriHatvp": get(data, "uriHatvp")
         })
 
 
@@ -82,7 +82,6 @@ class Professions(Base):
     __tablename__ = "professions"
 
     id = Column(Integer, primary_key=True)
-    actorId = Column(String, ForeignKey("actors.uid"))
     name = Column(String)
     family = Column(String)
     category = Column(String)

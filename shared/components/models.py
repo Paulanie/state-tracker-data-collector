@@ -3,7 +3,7 @@ from typing import Dict, List, Optional
 from sqlalchemy import Column, String, DateTime, Boolean, Date, Integer, ForeignKey
 from sqlalchemy.orm import declarative_base, Mapped, relationship, mapped_column
 
-from shared.utils import convert_to_datetime, get
+from shared.utils import convert_to_datetime, get, to_int
 
 Base = declarative_base()
 
@@ -12,16 +12,16 @@ class Amendments(Base):
     __tablename__ = "amendments"
 
     uid = Column(String, primary_key=True)
-    examenRef = Column(String)
-    triAmendement = Column(String)
-    texteLegislatifRef = Column(String)
+    examinationRef = Column(String)
+    triAmendment = Column(String)
+    legislativeTextRef = Column(String)
 
-    dateDepot = Column(DateTime)
-    datePublication = Column(DateTime)
-    dateSort = Column(DateTime)
+    deliveryDate = Column(DateTime)
+    publicationDate = Column(DateTime)
+    sortDate = Column(DateTime)
 
-    etat = Column(String)
-    sousEtat = Column(String)
+    state = Column(String)
+    subState = Column(String)
     representation = Column(String)
 
     article99 = Column(Boolean)
@@ -30,17 +30,70 @@ class Amendments(Base):
     def from_data_export(cls, data: Dict) -> "Amendments":
         return Amendments(**{
             "uid": data["uid"],
-            "examenRef": data["examenRef"],
-            "triAmendement": data["triAmendement"] if len(data["triAmendement"]) > 0 else None,
-            "texteLegislatifRef": data["texteLegislatifRef"],
-            "dateDepot": convert_to_datetime(data["cycleDeVie"]["dateDepot"], "%Y-%m-%d"),
-            "datePublication": convert_to_datetime(data["cycleDeVie"].get("datePublication"), "%Y-%m-%d"),
-            "dateSort": convert_to_datetime(data["cycleDeVie"].get("dateSort")),
-            "etat": data["cycleDeVie"]["etatDesTraitements"]["etat"]["libelle"],
-            "sousEtat": data["cycleDeVie"]["etatDesTraitements"]["sousEtat"].get("libelle"),
+            "examinationRef": data["examenRef"],
+            "triAmendment": get(data, "triAmendement") if get(data, "triAmendement") is not None and len(
+                get(data, "triAmendement")) > 0 else None,
+            "legislativeTextRef": data["texteLegislatifRef"],
+            "deliveryDate": convert_to_datetime(get(data, "cycleDeVie", "dateDepot"), "%Y-%m-%d"),
+            "publicationDate": convert_to_datetime(get(data, "cycleDeVie", "datePublication"), "%Y-%m-%d"),
+            "sortDate": convert_to_datetime(get(data, "cycleDeVie", "dateSort")),
+            "state": get(data, "cycleDeVie", "etatDesTraitements", "etat", "libelle"),
+            "subState": get(data, "cycleDeVie", "etatDesTraitements", "sousEtat", "libelle"),
             "representation": get(data, "representations", "representation", "contenu", "documentURI"),
             "article99": data["article99"].lower() == "true"
         })
+
+
+class Organs(Base):
+    __tablename__ = "organs"
+
+    uid = Column(String, primary_key=True)
+    type = Column(String)
+    label = Column(String)
+    editionLabel = Column(String)
+    shortLabel = Column(String)
+    abbreviationLabel = Column(String)
+    viMoDeStartDate = Column(Date, nullable=True)
+    viMoDeEndDate = Column(Date, nullable=True)
+    viMoDeApprovalDate = Column(Date, nullable=True)
+    chamber = Column(String, nullable=True)
+    regime = Column(String)
+    legislature = Column(Integer)
+    number = Column(Integer)
+    regionType = Column(String, nullable=True)
+    regionLabel = Column(String, nullable=True)
+    departmentCode = Column(String, nullable=True)
+    departmentLabel = Column(String, nullable=True)
+
+    parentOrganUid: Mapped[str] = mapped_column(ForeignKey("organs.uid"))
+    parent: Mapped[Optional["Organs"]] = relationship(remote_side=uid)
+    children: Mapped[List["Organs"]] = relationship(back_populates="parent")
+
+    @classmethod
+    def from_data_export(cls, data: Dict) -> "Organs":
+        return Organs(**{
+            "uid": data["uid"],
+            "type": data["codeType"],
+            "label": data["libelle"],
+            "editionLabel": get(data, "libelleEdition"),
+            "shortLabel": get(data, "libelleAbrege"),
+            "abbreviationLabel": get(data, "libelleAbrev"),
+            "viMoDeStartDate": convert_to_datetime(get(data, "viMoDe", "dateDebut"), "%Y-%m-%d", as_date=True),
+            "viMoDeEndDate": convert_to_datetime(get(data, "viMoDe", "dateFin"), "%Y-%m-%d", as_date=True),
+            "viMoDeApprovalDate": convert_to_datetime(get(data, "viMoDe", "dateAgrement"), "%Y-%m-%d", as_date=True),
+            "chamber": get(data, "chambre"),
+            "regime": get(data, "regime"),
+            "legislature": to_int(get(data, "legislature")),
+            "number": to_int(get(data, "numero")),
+            "regionType": get(data, "lieu", "region", "type"),
+            "regionLabel": get(data, "lieu", "region", "libelle"),
+            "departmentCode": get(data, "lieu", "departement", "code"),
+            "departmentLabel": get(data, "lieu", "departement", "libelle")
+        })
+
+    def __eq__(self, other: "Organs"):
+        to_compare = [k for k in (self.__dict__.keys() & other.__dict__.keys()) if not k.startswith("_")]
+        return all([self.__dict__[k] == other.__dict__[k] for k in to_compare])
 
 
 class Actors(Base):
@@ -106,9 +159,9 @@ class ActorsAddresses(Base):
     def from_data_export(cls, data: Dict) -> "ActorsAddresses":
         return ActorsAddresses(**{
             "uid": data["uid"],
-            "type": int(data["type"]),
+            "type": to_int(get(data, "type")),
             "typeName": data["typeLibelle"],
-            "weight": int(get(data, "poids")) if get(data, "poids") is not None else None,
+            "weight": to_int(get(data, "poids")),
             "affiliateAddress": get(data, "adresseDeRattachement"),
             "streetNumber": get(data, "numeroRue"),
             "streetName": get(data, "nomRue"),

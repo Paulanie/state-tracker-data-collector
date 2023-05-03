@@ -40,6 +40,7 @@ def drop_data(data: List[Dict], last_run: datetime.datetime, session: Session) -
     already_existing = {a.uid: "" for a in session.execute(select(Amendments.uid)).all()}
     return [d for d in recent_data if d["amendement"]["uid"] not in already_existing]
 
+
 @inject
 def amendments(jobs: JobsTable = Provide["gateways.jobs_table"]) -> None:
     last_run = jobs.get_last_run(JOB_PARTITION_KEY).get("run_datetime")
@@ -57,7 +58,7 @@ def amendments(jobs: JobsTable = Provide["gateways.jobs_table"]) -> None:
 
     if len(kept_data) > 0:
         transformed_data = wrap_around_progress_bar(lambda x: map_to_entity(x), kept_data, "Mapping data")
-        insert_or_update(transformed_data)
+        insert_or_update(transformed_data, Amendments.uid)
     else:
         logging.info("No data to upsert !")
 

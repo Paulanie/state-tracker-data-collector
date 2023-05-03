@@ -26,8 +26,12 @@ def split_data(data: List[Dict]) -> Tuple[List[Dict], List[Dict], List[Dict], Li
 
 
 def transform_professions(data: List[Dict]) -> List[Professions]:
+    logging.info("Transforming professions ...")
     unique_entries = list(
         {get(d, "libelleCourant").lower() if get(d, "libelleCourant") is not None else None: d for d in data}.values())
+    for e in unique_entries:
+        if "libelleCourant" in e and e["libelleCourant"] is not None:
+            e["libelleCourant"] = e["libelleCourant"].lower()
     to_keep = drop_data_json_entry(unique_entries, Professions.name, "libelleCourant")
     return [Professions.from_data_export(e) for e in to_keep]
 
@@ -45,12 +49,14 @@ def transform_actors(data: List[Dict], session: Session) -> List[Actors]:
     data_dict = {get(d, "uid", "#text"): d for d in data}
     professions = {p[0].name: p[0] for p in session.execute(select(Professions)).all()}
 
-    to_keep = drop_data_json_entry(data, Actors.uid, "uid", "#text")
-    actors = [Actors.from_data_export(d) for d in to_keep]
-    for a in actors:
+    actors = {a[0].uid: a[0] for a in session.execute(select(Actors)).all()}
+    new_actors = [Actors.from_data_export(d) for d in data]
+    for a in new_actors:
         profession = get(data_dict[a.uid], "profession", "libelleCourant")
         a.profession = professions[profession.lower() if profession is not None else None]
-    return actors
+
+    to_keep = [a for a in new_actors if a.uid not in actors or a != actors[a.uid]]
+    return to_keep
 
 
 def actors_task(data_dir: str) -> None:
@@ -62,6 +68,6 @@ def actors_task(data_dir: str) -> None:
     professions, addresses, mandates, actors = split_data(json_data)
 
     for data, transform, identifier in [(professions, transform_professions, Professions.name),
-                                                (actors, transform_actors, Actors.uid)]:
+                                        (actors, transform_actors, Actors.uid)]:
         transformed = transform(data)
         insert_or_update(transformed, identifier)

@@ -71,11 +71,16 @@ class Actors(Base):
             "name": data["etatCivil"]["ident"]["prenom"],
             "alpha": data["etatCivil"]["ident"]["alpha"],
             "trigram": get(data, "etatCivil", "ident", "trigramme"),
-            "birthdate": convert_to_datetime(get(data, "etatCivil", "infoNaissance", "dateNais"), "%Y-%m-%d"),
+            "birthdate": convert_to_datetime(get(data, "etatCivil", "infoNaissance", "dateNais"), "%Y-%m-%d",
+                                             as_date=True),
             "birthplace": birthplace if len(birthplace) > 0 else None,
-            "deathDate": convert_to_datetime(data["etatCivil"].get("dateDeces"), "%Y-%m-%d"),
-            "uriHatvp": get(data, "uriHatvp")
+            "deathDate": convert_to_datetime(data["etatCivil"].get("dateDeces"), "%Y-%m-%d", as_date=True),
+            "uriHatvp": get(data, "uri_hatvp")
         })
+
+    def __eq__(self, other: "Actors"):
+        to_compare = [k for k in (self.__dict__.keys() & other.__dict__.keys()) if not k.startswith("_")]
+        return all([self.__dict__[k] == other.__dict__[k] for k in to_compare])
 
 
 class Professions(Base):
@@ -95,3 +100,6 @@ class Professions(Base):
             "category": data["socProcINSEE"]["catSocPro"],
             "family": data["socProcINSEE"]["famSocPro"]
         })
+
+    def __eq__(self, other: "Professions"):
+        return self.id == other.id

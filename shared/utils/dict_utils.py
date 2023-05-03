@@ -1,4 +1,4 @@
-from typing import Dict, List, Any, MutableMapping, Union
+from typing import Dict, List, Any, MutableMapping, Union, Optional
 
 
 def get_or(d: Dict, f: str, default: Any) -> Any:
@@ -47,11 +47,11 @@ def flatten_dict(d: MutableMapping, parent_key: str = '', sep: str = '.') -> dic
     return dict(_flatten_dict_gen(d, parent_key, sep))
 
 
-def get(d: Dict, *keys: str) -> Any:
+def get(d: Dict, *keys: str, default: Optional[Any] = None) -> Any:
     current = d
     for k in keys:
         if k in current and current[k] is not None:
             current = current[k]
         else:
-            return None
+            return default
     return current

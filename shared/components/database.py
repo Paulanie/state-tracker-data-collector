@@ -21,7 +21,7 @@ class Database:
         def session_wrapper(*args, **kwargs):
             with Session(cls._engine) as session:
                 result = func(*args, **kwargs, session=session)
-                logging.info("Committing transaction ...")
+                logging.debug("Committing transaction ...")
                 session.commit()
                 return result
 

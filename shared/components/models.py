@@ -59,6 +59,7 @@ class Actors(Base):
 
     professionId: Mapped[int] = mapped_column(ForeignKey("professions.id"))
     profession: Mapped[Optional["Professions"]] = relationship(back_populates="actors")
+    addresses: Mapped[List["ActorsAddresses"]] = relationship(back_populates="actor")
 
     @classmethod
     def from_data_export(cls, data: Dict) -> "Actors":
@@ -79,6 +80,45 @@ class Actors(Base):
         })
 
     def __eq__(self, other: "Actors"):
+        to_compare = [k for k in (self.__dict__.keys() & other.__dict__.keys()) if not k.startswith("_")]
+        return all([self.__dict__[k] == other.__dict__[k] for k in to_compare])
+
+
+class ActorsAddresses(Base):
+    __tablename__ = "actorsaddresses"
+
+    uid = Column(String, primary_key=True)
+    type = Column(Integer)
+    typeName = Column(String)
+    weight = Column(Integer, nullable=True)
+    affiliateAddress = Column(String, nullable=True)
+    streetNumber = Column(String, nullable=True)
+    streetName = Column(String, nullable=True)
+    zipCode = Column(String, nullable=True)
+    city = Column(String, nullable=True)
+    address = Column(String, nullable=True)
+    phone = Column(String, nullable=True)
+
+    actorUid: Mapped[str] = mapped_column(ForeignKey("actors.uid"))
+    actor: Mapped["Actors"] = relationship(back_populates="addresses")
+
+    @classmethod
+    def from_data_export(cls, data: Dict) -> "ActorsAddresses":
+        return ActorsAddresses(**{
+            "uid": data["uid"],
+            "type": int(data["type"]),
+            "typeName": data["typeLibelle"],
+            "weight": int(get(data, "poids")) if get(data, "poids") is not None else None,
+            "affiliateAddress": get(data, "adresseDeRattachement"),
+            "streetNumber": get(data, "numeroRue"),
+            "streetName": get(data, "nomRue"),
+            "zipCode": get(data, "codePostal"),
+            "city": get(data, "ville"),
+            "address": get(data, "valElec") if data["type"] in ["22", "15"] else None,
+            "phone": get(data, "valElec") if data["type"] == "11" else None
+        })
+
+    def __eq__(self, other: "ActorsAddresses"):
         to_compare = [k for k in (self.__dict__.keys() & other.__dict__.keys()) if not k.startswith("_")]
         return all([self.__dict__[k] == other.__dict__[k] for k in to_compare])
 

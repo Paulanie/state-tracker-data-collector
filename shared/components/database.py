@@ -1,4 +1,5 @@
 import logging
+from enum import Enum
 from typing import Callable, List, Dict
 
 from sqlalchemy import create_engine, URL, Engine, select, Column
@@ -7,13 +8,29 @@ from sqlalchemy.orm import Session
 from ..utils import wrap_around_progress_bar, get
 
 
+class SQLEngine(Enum):
+    MSSQL = "mssql+pymssql"
+    POSTGRES = "postgresql+psycopg2"
+
+    @staticmethod
+    def from_string(value: str):
+        match value:
+            case "mssql":
+                return SQLEngine.MSSQL
+            case "postgres":
+                return SQLEngine.POSTGRES
+            case _:
+                raise ValueError(f"Unknown SQL engine: {value}")
+
+
 class Database:
     _engine: Engine
 
     @classmethod
-    def init_with_credentials(cls, username: str, password: str, host: str, port: int, database: str):
+    def init_with_credentials(cls, engine: str, username: str, password: str, host: str, port: int,
+                              database: str):
         cls._engine = create_engine(
-            URL.create(drivername="mssql+pymssql", username=username, password=password, host=host, port=port,
+            URL.create(drivername=SQLEngine.from_string(engine).value, username=username, password=password, host=host, port=port,
                        database=database))
 
     @classmethod

@@ -1,7 +1,6 @@
 import logging
 from typing import List, Dict, Tuple
 
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ...components import Professions, insert_or_update, drop_data_json_entry, Actors, Database, ActorsAddresses
@@ -10,7 +9,8 @@ from ...utils import get_all_files_in_dir, wrap_around_progress_bar, read_json, 
 USELESS_DATA = [
     "@xmlns",
     "@xmlns:xsi",
-    "@xsi:nil"
+    "@xsi:nil",
+    "@xsi:type"
 ]
 
 
@@ -18,9 +18,16 @@ def split_data(data: List[Dict]) -> Tuple[List[Dict], List[Dict], List[Dict], Li
     data_cleaned = [d["acteur"] for d in delete_keys_from_dict(data, USELESS_DATA)]
     professions = list({get(d, "profession", "libelleCourant"): get(d, "profession") for d in
                         data_cleaned if get(d, "profession") is not None}.values())
-    # TODO addresses, mandates
-    addresses = [{**address, "actorUid": get(d, "acteur", "uid", "#text")} for d in data for address in
-                 get(d, "acteur", "adresses", "adresse", default=[])]
+
+    def get_addresses(d: Dict) -> List:
+        actor_uid = get(d, "acteur", "uid", "#text")
+        has_multiple_addresses = type(get(d, "acteur", "adresses", "adresse", default=[])) is not dict
+        inner_addresses = [a for a in get(d, "acteur", "adresses", "adresse", default=[])] \
+            if has_multiple_addresses else [get(d, "acteur", "adresses", "adresse", default={})]
+        return [{**a, "actorUid": actor_uid} for a in inner_addresses]
+
+    addresses = [a for d in data for a in get_addresses(d)]
+    # TODO mandates
     mandates = []
 
     return professions, addresses, mandates, data_cleaned

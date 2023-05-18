@@ -33,5 +33,5 @@ application.config.gateways.azure.storage_account_key.from_env("STORAGE_ACCOUNT_
 application.config.gateways.azure.jobs_table_name.from_env("JOBS_TABLE_NAME", required=True)
 application.wire(modules=["shared.functions.amendments.function", "shared.functions.deputies.function"])
 
-Database.init_with_credentials(Environment.sql_user, Environment.sql_password, Environment.sql_host,
+Database.init_with_credentials(Environment.sql_engine, Environment.sql_user, Environment.sql_password, Environment.sql_host,
                                Environment.sql_port, Environment.sql_database)

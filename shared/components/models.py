@@ -12,16 +12,16 @@ class Amendments(Base):
     __tablename__ = "amendments"
 
     uid = Column(String, primary_key=True)
-    examinationRef = Column(String)
-    triAmendment = Column(String)
-    legislativeTextRef = Column(String)
+    examination_ref = Column(String)
+    tri_amendment = Column(String)
+    legislative_text_ref = Column(String)
 
-    deliveryDate = Column(DateTime)
-    publicationDate = Column(DateTime)
-    sortDate = Column(DateTime)
+    delivery_date = Column(DateTime)
+    publication_date = Column(DateTime)
+    sort_date = Column(DateTime)
 
     state = Column(String)
-    subState = Column(String)
+    sub_state = Column(String)
     representation = Column(String)
 
     article99 = Column(Boolean)
@@ -30,15 +30,15 @@ class Amendments(Base):
     def from_data_export(cls, data: Dict) -> "Amendments":
         return Amendments(**{
             "uid": data["uid"],
-            "examinationRef": data["examenRef"],
-            "triAmendment": get(data, "triAmendement") if get(data, "triAmendement") is not None and len(
+            "examination_ref": data["examenRef"],
+            "tri_amendment": get(data, "triAmendement") if get(data, "triAmendement") is not None and len(
                 get(data, "triAmendement")) > 0 else None,
-            "legislativeTextRef": data["texteLegislatifRef"],
-            "deliveryDate": convert_to_datetime(get(data, "cycleDeVie", "dateDepot"), "%Y-%m-%d"),
-            "publicationDate": convert_to_datetime(get(data, "cycleDeVie", "datePublication"), "%Y-%m-%d"),
-            "sortDate": convert_to_datetime(get(data, "cycleDeVie", "dateSort")),
+            "legislative_text_ref": data["texteLegislatifRef"],
+            "delivery_date": convert_to_datetime(get(data, "cycleDeVie", "dateDepot"), "%Y-%m-%d"),
+            "publication_date": convert_to_datetime(get(data, "cycleDeVie", "datePublication"), "%Y-%m-%d"),
+            "sort_date": convert_to_datetime(get(data, "cycleDeVie", "dateSort")),
             "state": get(data, "cycleDeVie", "etatDesTraitements", "etat", "libelle"),
-            "subState": get(data, "cycleDeVie", "etatDesTraitements", "sousEtat", "libelle"),
+            "sub_state": get(data, "cycleDeVie", "etatDesTraitements", "sousEtat", "libelle"),
             "representation": get(data, "representations", "representation", "contenu", "documentURI"),
             "article99": data["article99"].lower() == "true"
         })
@@ -50,22 +50,22 @@ class Organs(Base):
     uid = Column(String, primary_key=True)
     type = Column(String)
     label = Column(String)
-    editionLabel = Column(String)
-    shortLabel = Column(String)
-    abbreviationLabel = Column(String)
-    viMoDeStartDate = Column(Date, nullable=True)
-    viMoDeEndDate = Column(Date, nullable=True)
-    viMoDeApprovalDate = Column(Date, nullable=True)
+    edition_label = Column(String)
+    short_label = Column(String)
+    abbreviation_label = Column(String)
+    vi_mo_de_start_date = Column(Date, nullable=True)
+    vi_mo_de_end_date = Column(Date, nullable=True)
+    vi_mo_de_approval_date = Column(Date, nullable=True)
     chamber = Column(String, nullable=True)
     regime = Column(String)
     legislature = Column(Integer)
     number = Column(Integer)
-    regionType = Column(String, nullable=True)
-    regionLabel = Column(String, nullable=True)
-    departmentCode = Column(String, nullable=True)
-    departmentLabel = Column(String, nullable=True)
+    region_type = Column(String, nullable=True)
+    region_label = Column(String, nullable=True)
+    department_code = Column(String, nullable=True)
+    department_label = Column(String, nullable=True)
 
-    parentOrganUid: Mapped[str] = mapped_column(ForeignKey("organs.uid"))
+    parent_organ_uid: Mapped[str] = mapped_column(ForeignKey("organs.uid"))
     parent: Mapped[Optional["Organs"]] = relationship(remote_side=uid)
     children: Mapped[List["Organs"]] = relationship(back_populates="parent")
 
@@ -75,20 +75,20 @@ class Organs(Base):
             "uid": data["uid"],
             "type": data["codeType"],
             "label": data["libelle"],
-            "editionLabel": get(data, "libelleEdition"),
-            "shortLabel": get(data, "libelleAbrege"),
-            "abbreviationLabel": get(data, "libelleAbrev"),
-            "viMoDeStartDate": convert_to_datetime(get(data, "viMoDe", "dateDebut"), "%Y-%m-%d", as_date=True),
-            "viMoDeEndDate": convert_to_datetime(get(data, "viMoDe", "dateFin"), "%Y-%m-%d", as_date=True),
-            "viMoDeApprovalDate": convert_to_datetime(get(data, "viMoDe", "dateAgrement"), "%Y-%m-%d", as_date=True),
+            "edition_label": get(data, "libelleEdition"),
+            "short_label": get(data, "libelleAbrege"),
+            "abbreviation_label": get(data, "libelleAbrev"),
+            "vi_mo_de_start_date": convert_to_datetime(get(data, "viMoDe", "dateDebut"), "%Y-%m-%d", as_date=True),
+            "vi_mo_de_end_date": convert_to_datetime(get(data, "viMoDe", "dateFin"), "%Y-%m-%d", as_date=True),
+            "vi_mo_de_approval_date": convert_to_datetime(get(data, "viMoDe", "dateAgrement"), "%Y-%m-%d", as_date=True),
             "chamber": get(data, "chambre"),
             "regime": get(data, "regime"),
             "legislature": to_int(get(data, "legislature")),
             "number": to_int(get(data, "numero")),
-            "regionType": get(data, "lieu", "region", "type"),
-            "regionLabel": get(data, "lieu", "region", "libelle"),
-            "departmentCode": get(data, "lieu", "departement", "code"),
-            "departmentLabel": get(data, "lieu", "departement", "libelle")
+            "region_type": get(data, "lieu", "region", "type"),
+            "region_label": get(data, "lieu", "region", "libelle"),
+            "department_code": get(data, "lieu", "departement", "code"),
+            "department_label": get(data, "lieu", "departement", "libelle")
         })
 
     def __eq__(self, other: "Organs"):
@@ -107,10 +107,10 @@ class Actors(Base):
     trigram = Column(String)
     birthdate = Column(Date)
     birthplace = Column(String)
-    deathDate = Column(Date)
-    uriHatvp = Column(String)
+    death_date = Column(Date)
+    uri_hatvp = Column(String)
 
-    professionId: Mapped[int] = mapped_column(ForeignKey("professions.id"))
+    profession_id: Mapped[int] = mapped_column(ForeignKey("professions.id"))
     profession: Mapped[Optional["Professions"]] = relationship(back_populates="actors")
     addresses: Mapped[List["ActorsAddresses"]] = relationship(back_populates="actor")
 
@@ -128,8 +128,8 @@ class Actors(Base):
             "birthdate": convert_to_datetime(get(data, "etatCivil", "infoNaissance", "dateNais"), "%Y-%m-%d",
                                              as_date=True),
             "birthplace": birthplace if len(birthplace) > 0 else None,
-            "deathDate": convert_to_datetime(data["etatCivil"].get("dateDeces"), "%Y-%m-%d", as_date=True),
-            "uriHatvp": get(data, "uri_hatvp")
+            "death_date": convert_to_datetime(data["etatCivil"].get("dateDeces"), "%Y-%m-%d", as_date=True),
+            "uri_hatvp": get(data, "uri_hatvp")
         })
 
     def __eq__(self, other: "Actors"):
@@ -138,21 +138,21 @@ class Actors(Base):
 
 
 class ActorsAddresses(Base):
-    __tablename__ = "actorsaddresses"
+    __tablename__ = "actors_addresses"
 
     uid = Column(String, primary_key=True)
     type = Column(Integer)
-    typeName = Column(String)
+    type_name = Column(String)
     weight = Column(Integer, nullable=True)
-    affiliateAddress = Column(String, nullable=True)
-    streetNumber = Column(String, nullable=True)
-    streetName = Column(String, nullable=True)
-    zipCode = Column(String, nullable=True)
+    affiliate_address = Column(String, nullable=True)
+    street_number = Column(String, nullable=True)
+    street_name = Column(String, nullable=True)
+    zip_code = Column(String, nullable=True)
     city = Column(String, nullable=True)
     address = Column(String, nullable=True)
     phone = Column(String, nullable=True)
 
-    actorUid: Mapped[str] = mapped_column(ForeignKey("actors.uid"))
+    actor_uid: Mapped[str] = mapped_column(ForeignKey("actors.uid"))
     actor: Mapped["Actors"] = relationship(back_populates="addresses")
 
     @classmethod
@@ -160,12 +160,12 @@ class ActorsAddresses(Base):
         return ActorsAddresses(**{
             "uid": data["uid"],
             "type": to_int(get(data, "type")),
-            "typeName": data["typeLibelle"],
+            "type_name": data["typeLibelle"],
             "weight": to_int(get(data, "poids")),
-            "affiliateAddress": get(data, "adresseDeRattachement"),
-            "streetNumber": get(data, "numeroRue"),
-            "streetName": get(data, "nomRue"),
-            "zipCode": get(data, "codePostal"),
+            "affiliate_address": get(data, "adresseDeRattachement"),
+            "street_number": get(data, "numeroRue"),
+            "street_name": get(data, "nomRue"),
+            "zip_code": get(data, "codePostal"),
             "city": get(data, "ville"),
             "address": get(data, "valElec") if data["type"] in ["22", "15"] else None,
             "phone": get(data, "valElec") if data["type"] == "11" else None

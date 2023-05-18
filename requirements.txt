@@ -13,3 +13,4 @@ tqdm-loggable
 python-dotenv
 sqlalchemy
 pymssql
+psycopg2-binary

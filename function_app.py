@@ -26,5 +26,5 @@ if __name__ == '__main__':
     # dev_with_pycharm()
 
     logging.getLogger().setLevel(logging.INFO)
-    #amendments()
+    amendments()
     deputies()

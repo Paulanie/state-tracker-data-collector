@@ -16,3 +16,4 @@ class Environment:
     sql_database = os.getenv("SQL_DATABASE")
     sql_user = os.getenv("SQL_USER")
     sql_password = os.getenv("SQL_PASSWORD")
+    sql_engine = os.getenv("SQL_ENGINE")

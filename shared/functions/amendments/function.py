@@ -46,7 +46,7 @@ def amendments(jobs: JobsTable = Provide["gateways.jobs_table"]) -> None:
     last_run = jobs.get_last_run(JOB_PARTITION_KEY).get("run_datetime")
     logging.info(f"Last run was on {last_run}")
 
-    logging.info("Gathering amendments ...")
+    logging.info(f"Downloading amendments from {Environment.amendments_url}...")
     data_dir = download_file(Environment.amendments_url, auto_extract=True)
     json_files = get_all_files_in_dir(data_dir)
     logging.info(f"Found {len(json_files)} amendments ! Applying transformations and filtering ...")

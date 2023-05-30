@@ -3,7 +3,7 @@ from typing import Dict, List, Optional
 from sqlalchemy import Column, String, DateTime, Boolean, Date, Integer, ForeignKey
 from sqlalchemy.orm import declarative_base, Mapped, relationship, mapped_column
 
-from shared.utils import convert_to_datetime, get, to_int
+from shared.utils import convert_to_datetime, get, to_int, decode_html_french_string
 
 Base = declarative_base()
 
@@ -26,6 +26,9 @@ class Amendments(Base):
 
     article99 = Column(Boolean)
 
+    contentTitle = Column(String)
+    contentSummary = Column(String)
+
     @classmethod
     def from_data_export(cls, data: Dict) -> "Amendments":
         return Amendments(**{
@@ -40,7 +43,9 @@ class Amendments(Base):
             "state": get(data, "cycleDeVie", "etatDesTraitements", "etat", "libelle"),
             "sub_state": get(data, "cycleDeVie", "etatDesTraitements", "sousEtat", "libelle"),
             "representation": get(data, "representations", "representation", "contenu", "documentURI"),
-            "article99": data["article99"].lower() == "true"
+            "article99": data["article99"].lower() == "true",
+            "contentTitle": decode_html_french_string(get(data, "corps", "contenuAuteur", "dispositif", default="")),
+            "contentSummary": decode_html_french_string(get(data, "corps", "contenuAuteur", "exposeSommaire", default=""))
         })
 
 
